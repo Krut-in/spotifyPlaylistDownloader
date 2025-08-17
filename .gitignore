@@ -1,0 +1,77 @@
+# Environment variables and API keys
+.env
+.env.local
+.env.production
+.env.staging
+
+# API key files
+api_keys.txt
+secrets.txt
+credentials.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# CSV files (optional - remove if you want to track them)
+# *.csv
+
+# Backup files
+*_backup.*
+*.bak
+*.backup
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
