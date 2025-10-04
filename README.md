@@ -3,18 +3,208 @@
 ## Project Overview
 
 **What does this project do?**
-This is an automated music downloader that takes a Spotify playlist URL and downloads all the songs to your computer. Think of it as a "magic tool" that:
-1. Reads your Spotify playlist
+This is an automated music downloader that takes a Spotify playlist/album URL and downloads all the songs to your computer. Think of it as a "magic tool" that:
+1. Reads your Spotify playlist or album
 2. Finds the same songs on YouTube
-3. Downloads them as audio files
+3. Downloads them as high-quality audio files
 4. Organizes everything in neat folders
 
 **Why was this built?**
-Spotify doesn't let you download songs, and manually finding each song on YouTube is tedious. This tool automates the entire process - you just paste a playlist link and get all your music downloaded automatically.
+Spotify doesn't let you download songs, and manually finding each song on YouTube is tedious. This tool automates the entire process - you just paste a playlist/album link and get all your music downloaded automatically.
 
 **Example:**
 - Input: `https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M` (Today's Top Hits)
-- Output: A folder called "Today's Top Hits" containing 50 downloaded songs
+- Output: A folder called "Today's Top Hits" containing 50 downloaded songs as M4A audio files
+
+---
+
+## 🚀 Quick Start Guide - Steps to Download Songs
+
+### Prerequisites
+
+Before running the script, you need:
+
+1. **Python 3.7 or higher** installed on your system
+2. **Spotify API credentials** (Client ID and Client Secret)
+3. **YouTube Data API key**
+4. Internet connection
+
+### Step 1: Get Your API Keys
+
+#### Spotify API Setup:
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Log in with your Spotify account
+3. Click "Create an App"
+4. Fill in the app name and description
+5. Copy your **Client ID** and **Client Secret**
+
+#### YouTube API Setup:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable "YouTube Data API v3"
+4. Go to "Credentials" and create an API key
+5. Copy your **YouTube API Key**
+
+### Step 2: Configure Environment Variables
+
+1. In the project folder, you'll find `env_template.txt`
+2. Create a new file named `.env` (exactly like this, starting with a dot)
+3. Copy the content from `env_template.txt` to `.env`
+4. Replace the placeholder values with your actual API keys:
+
+```env
+SPOTIFY_CLIENT_ID=your_actual_client_id_here
+SPOTIFY_CLIENT_SECRET=your_actual_client_secret_here
+YOUTUBE_API_KEY=your_actual_youtube_api_key_here
+```
+
+**Important:** Never share or commit your `.env` file to version control!
+
+### Step 3: Install Python Dependencies
+
+The script automatically installs required packages, but you can install them manually:
+
+```bash
+pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
+```
+
+### Step 4: Run the Script
+
+1. Open your terminal/command prompt
+2. Navigate to the project folder:
+   ```bash
+   cd path/to/audioDownloader
+   ```
+
+3. Run the script:
+   ```bash
+   python spotify_to_youtube.py
+   ```
+
+### Step 5: Provide Input
+
+When the script runs, you'll see:
+
+```
+============================================================
+Enter your Spotify playlist/album URL and optional search keyword
+Format: {URL} [keyword]
+Examples:
+  https://open.spotify.com/playlist/xxx
+  https://open.spotify.com/album/xxx Visualizer
+  https://open.spotify.com/playlist/xxx Audio
+============================================================
+
+Input:
+```
+
+**You have two options:**
+
+#### Option 1: Basic Usage (Default 'lyrics' search)
+Just paste the Spotify URL:
+```
+https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I
+```
+This will search YouTube for each song with "lyrics" appended (e.g., "Song Name Artist lyrics")
+
+#### Option 2: Custom Keyword Search
+Paste the URL followed by a space and your preferred keyword:
+```
+https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I Visualizer
+```
+
+**Supported keywords:**
+- `Visualizer` - For official visualizer videos
+- `Audio` - For official audio tracks
+- `Official` - For official music videos
+- `Live` - For live performances
+- `Acoustic` - For acoustic versions
+- Or any custom keyword you want!
+
+### Step 6: Wait for Downloads
+
+The script will automatically:
+1. ✅ Extract song information from Spotify
+2. ✅ Create a folder with the playlist/album name
+3. ✅ Search YouTube for each song
+4. ✅ Save a CSV file with all song details and YouTube links
+5. ✅ Download all songs as M4A audio files
+
+**Progress indicators will show:**
+- YouTube search progress
+- Download progress for each song
+- Total songs downloaded
+
+### Step 7: Access Your Downloaded Songs
+
+After completion, you'll find:
+- **Folder:** Named after your playlist/album
+- **Audio Files:** High-quality M4A files
+- **CSV File:** `spotify_playlist_with_youtube.csv` containing:
+  - Track Name
+  - Artist Name(s)
+  - YouTube Link
+  - YouTube Video Title
+
+### Example Run
+
+```bash
+$ python spotify_to_youtube.py
+
+Spotify Playlist to YouTube Downloader
+==================================================
+Checking and installing required packages...
+All required packages are already installed!
+
+Enter your Spotify playlist/album URL and optional search keyword
+Input: https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I Visualizer
+
+Exporting Spotify playlist...
+Album: The Life of a Showgirl
+Total tracks: 12
+Created folder: The Life of a Showgirl
+Successfully exported 12 tracks!
+
+Using custom YouTube search keyword: 'Visualizer'
+
+Starting YouTube search...
+Searching YouTube: 100%|██████████| 12/12 [00:15<00:00]
+
+Success rate: 100%
+
+Starting download of 12 songs...
+[Download progress for each song...]
+
+Download completed successfully!
+Songs downloaded to: The Life of a Showgirl/
+
+Process completed successfully!
+```
+
+### Troubleshooting
+
+**Problem: "No module named 'spotipy'"**
+- Solution: Run `pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp`
+
+**Problem: "API key not found"**
+- Solution: Make sure your `.env` file exists and contains valid API keys
+
+**Problem: "Invalid playlist URL"**
+- Solution: Make sure you're using a valid Spotify playlist or album URL
+
+**Problem: "YouTube API quota exceeded"**
+- Solution: YouTube API has daily limits. Wait 24 hours or create a new API key
+
+**Problem: Downloads fail**
+- Solution: Check your internet connection and ensure yt-dlp is updated
+
+### Tips for Best Results
+
+1. 🎵 **Use specific keywords** for better YouTube matches
+2. 📁 **Organize by genre** - Download different playlists to different folders
+3. ⚡ **Smaller playlists first** - Test with small playlists before large ones
+4. 🔍 **Check CSV file** - Review YouTube links before downloading
+5. 💾 **Keep CSV files** - They serve as a backup reference
 
 ---
 
