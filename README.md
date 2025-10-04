@@ -1,597 +1,421 @@
-# Spotify to YouTube Downloader - Complete Code Walkthrough
+# Spotify Playlist Downloader
 
-## Project Overview
-
-**What does this project do?**
-This is an automated music downloader that takes a Spotify playlist/album URL and downloads all the songs to your computer. Think of it as a "magic tool" that:
-1. Reads your Spotify playlist or album
-2. Finds the same songs on YouTube
-3. Downloads them as high-quality audio files
-4. Organizes everything in neat folders
-
-**Why was this built?**
-Spotify doesn't let you download songs, and manually finding each song on YouTube is tedious. This tool automates the entire process - you just paste a playlist/album link and get all your music downloaded automatically.
-
-**Example:**
-- Input: `https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M` (Today's Top Hits)
-- Output: A folder called "Today's Top Hits" containing 50 downloaded songs as M4A audio files
+A fully automated Python application that bridges Spotify and YouTube to download entire music collections with a single command. Simply paste a Spotify playlist or album link, and watch as the application intelligently searches YouTube, matches each track, and downloads high-quality audio files—all organized into neatly structured folders without any manual intervention required.
 
 ---
 
-## � Project Files
+## The Challenge We Tackled
 
-### Main Files:
-- **`spotify_to_youtube.py`** - Main script that downloads songs
-- **`install_requirements.py`** - Helper script to install all dependencies automatically
-- **`env_template.txt`** - Template for API keys configuration
-- **`.env`** - Your actual API keys (you create this from the template)
-- **`README.md`** - This documentation file
-- **`SETUP.md`** - Detailed setup instructions
+Music streaming has revolutionized how we consume audio content, but it comes with a fundamental limitation: you never truly own your music. Spotify, despite its vast library and sophisticated algorithms, operates on a rental model. Your carefully curated playlists exist only as long as you maintain your subscription and the licensing agreements hold. When songs are removed from the platform or when you travel to regions with limited connectivity, your music becomes inaccessible.
 
-### What is `install_requirements.py`?
+The traditional workaround involves manually searching for each song on YouTube, downloading them individually, and organizing hundreds of files by hand. This process is not only time-consuming but also error-prone. You might download the wrong version, end up with inconsistent audio quality, or struggle with file naming conventions that make organization a nightmare.
 
-This is a convenient helper script that:
-- ✅ Automatically installs all required Python packages
-- ✅ Shows installation progress for each package
-- ✅ Provides a summary of successful/failed installations
-- ✅ Gives you next steps after installation
-- ✅ Handles errors gracefully
+We identified three critical pain points in the current landscape:
 
-**How to use it:**
-```bash
-python install_requirements.py
-```
+**Manual Labor at Scale:** Downloading a 50-song playlist means performing the same search-download-organize cycle 50 times. This repetitive task consumes hours that could be better spent elsewhere.
 
-**What it installs:**
-- spotipy (Spotify API client)
-- pandas (Data manipulation)
-- google-api-python-client (YouTube API client)
-- tqdm (Progress bars)
-- python-dotenv (Environment variables)
-- yt-dlp (YouTube downloader)
+**Inconsistent Quality and Versions:** YouTube hosts multiple versions of the same song—live performances, covers, remixes, lyric videos, and official audio. Without careful attention, you might download a concert recording when you wanted the studio version, or vice versa.
 
-> **Tip:** Use this script if you want a quick, automated way to set up all dependencies!
+**Organization Chaos:** After downloading, users face the daunting task of organizing files, creating folders, and maintaining a structure that makes sense. File names from YouTube are often cryptic or excessively long, making library management frustrating.
+
+These challenges inspired us to build a solution that respects both the convenience of modern streaming and the autonomy of owning your music collection.
 
 ---
 
-## �🚀 Quick Start Guide - Steps to Download Songs
+## What Spotify Playlist Downloader Does
+
+Our solution emerged from a simple question: what if we could automate the entire workflow while giving users precise control over what they download? We designed this application to act as a bridge between two ecosystems—Spotify's comprehensive metadata and YouTube's vast audio library.
+
+The journey begins with Spotify's API. When you provide a playlist or album URL, we extract complete track information: song titles, artist names, and album details. This data serves as our blueprint. Next, we leverage YouTube's Data API to intelligently search for each track. Here's where we introduced a key innovation: **customizable search keywords**. Users can specify whether they want "lyrics" videos, "visualizer" versions, "official audio," or any other modifier. This granular control ensures you get exactly the version you desire.
+
+Once matches are identified, our application delegates the download process to yt-dlp, a robust command-line tool that handles YouTube's ever-changing architecture. We extract high-quality M4A audio files while maintaining metadata integrity. Every download is logged in a structured CSV file that maps each track to its corresponding YouTube video, creating a transparent record of your collection.
+
+### Core Features
+
+#### Intelligent Track Matching
+- Automatically extracts song and artist information from Spotify playlists and albums
+- Searches YouTube with **customizable keywords** to find the exact version you want
+- Supports "lyrics," "visualizer," "official audio," "live," "acoustic," and custom search terms
+- Uses YouTube's music category filter to prioritize official content
+- **Handles pagination** for large playlists exceeding 100 tracks seamlessly
+
+#### Dual Platform Support
+- Works with **both Spotify playlists and albums** using the same interface
+- Parses Spotify URLs automatically to determine content type
+- Maintains compatibility with Spotify's authentication flow
+- Extracts complete metadata including track names, artists, and album information
+
+#### Smart Organization System
+- Creates dedicated folders named after playlists or albums
+- Sanitizes folder names to ensure file system compatibility
+- Downloads all tracks as high-quality M4A audio files
+- Preserves YouTube video titles in filenames for easy identification
+- Generates a comprehensive CSV file with four columns: Track Name, Artist(s), YouTube Link, and **Video Title**
+
+#### Transparent Tracking
+- Records every downloaded track in a structured CSV format
+- Maps each song to its specific YouTube source for future reference
+- Enables users to verify which versions were downloaded
+- Provides a permanent record that survives file reorganization
+
+#### Automated Dependency Management
+- Checks for required Python packages and **installs them automatically**
+- Verifies yt-dlp availability and installs if missing
+- Validates API credentials before processing
+- Provides clear error messages when setup is incomplete
+
+---
+
+## Technical Foundation
+
+Building a reliable automation tool required careful selection of technologies that balance power, maintainability, and ease of deployment. Our architecture relies on proven libraries and modern APIs.
+
+### Core Technologies
+
+**Python 3.7+** serves as our foundation, chosen for its robust ecosystem and cross-platform compatibility. The language's readability ensures that the codebase remains accessible to developers of varying skill levels.
+
+**Spotipy** provides our gateway to Spotify's Web API. This official Python library handles authentication complexities and API rate limiting, allowing us to focus on business logic rather than HTTP request management.
+
+**Google API Python Client** connects us to YouTube's Data API v3. We use this to perform intelligent searches within YouTube's music category, ensuring results are relevant and high-quality.
+
+**yt-dlp** handles the actual download process. This actively maintained fork of youtube-dl adapts quickly to YouTube's frequent changes, providing reliability that custom download implementations cannot match.
+
+**Pandas** manages our data structures. We use DataFrames to organize track information, perform bulk operations, and export results to CSV format with minimal code complexity.
+
+**python-dotenv** manages our environment variables. API keys remain secure in local .env files, never exposed in version control or hardcoded into source files.
+
+**tqdm** enhances user experience with real-time progress bars. Users see exactly how many tracks have been processed and how many remain, reducing perceived wait times.
+
+### Architecture Decisions
+
+We structured the application around three core principles: **modularity**, **error resilience**, and **user transparency**.
+
+**Modularity** manifests in our function design. Each function handles a single responsibility—extracting Spotify data, searching YouTube, creating folders, or downloading files. This separation allows us to test components independently and swap implementations without cascading changes.
+
+**Error resilience** guided our exception handling strategy. When a single track fails to download, the application logs the error and continues with remaining tracks. Network timeouts, API rate limits, and missing videos don't crash the entire process. Users receive a success rate summary at the end, highlighting what worked and what needs attention.
+
+**User transparency** drove our decision to generate detailed CSV files. Rather than operating as a black box, we provide a clear audit trail. Users can inspect which YouTube videos were selected, verify that versions match expectations, and manually intervene if needed.
+
+### API Integration Strategy
+
+Spotify and YouTube impose rate limits to prevent abuse. We respect these constraints through intelligent request management. For Spotify, we batch track requests and handle pagination automatically. For YouTube, we limit concurrent searches and implement exponential backoff when approaching quota limits.
+
+Authentication follows industry best practices. Spotify uses OAuth 2.0 client credentials flow, while YouTube relies on API keys. Both credentials remain local, never transmitted outside official API endpoints.
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-Before running the script, you need:
+Before running the application, ensure your system meets these requirements:
 
-1. **Python 3.7 or higher** installed on your system
-2. **Spotify API credentials** (Client ID and Client Secret)
-3. **YouTube Data API key**
-4. Internet connection
+- **Python 3.7 or higher** installed and accessible from your terminal
+- **Active internet connection** for API requests and downloads
+- **Spotify Developer Account** for API credentials
+- **Google Cloud Account** for YouTube Data API access
 
-### Step 1: Get Your API Keys
+### Step 1: Obtain API Credentials
 
-#### Spotify API Setup:
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Log in with your Spotify account
-3. Click "Create an App"
-4. Fill in the app name and description
-5. Copy your **Client ID** and **Client Secret**
+#### Spotify API Setup
 
-#### YouTube API Setup:
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing one
-3. Enable "YouTube Data API v3"
-4. Go to "Credentials" and create an API key
-5. Copy your **YouTube API Key**
+1. Navigate to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Log in with your Spotify account credentials
+3. Click the "Create an App" button in the dashboard
+4. Provide an application name and description (these are for your reference only)
+5. After creation, locate your **Client ID** and **Client Secret** on the app's dashboard
+6. Keep these credentials secure—they authenticate your application with Spotify's servers
+
+#### YouTube API Setup
+
+1. Visit the [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one from the project dropdown
+3. Navigate to the "APIs & Services" section in the left sidebar
+4. Click "Enable APIs and Services" and search for "YouTube Data API v3"
+5. Enable the API for your project
+6. Go to "Credentials" and click "Create Credentials," then select "API Key"
+7. Copy the generated API key—this authenticates your YouTube requests
+8. Consider restricting the key to YouTube Data API v3 only for security
 
 ### Step 2: Configure Environment Variables
 
-1. In the project folder, you'll find `env_template.txt`
-2. Create a new file named `.env` (exactly like this, starting with a dot)
-3. Copy the content from `env_template.txt` to `.env`
-4. Replace the placeholder values with your actual API keys:
+The application reads API credentials from a local environment file, keeping sensitive information out of source code.
 
-```env
-SPOTIFY_CLIENT_ID=your_actual_client_id_here
-SPOTIFY_CLIENT_SECRET=your_actual_client_secret_here
-YOUTUBE_API_KEY=your_actual_youtube_api_key_here
+1. Locate the `env_template.txt` file in the project directory
+2. Create a new file named `.env` (note the leading dot—this makes it hidden on Unix systems)
+3. Open `.env` in a text editor and add your credentials:
+
+```
+SPOTIFY_CLIENT_ID=your_actual_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_actual_spotify_client_secret
+YOUTUBE_API_KEY=your_actual_youtube_api_key
 ```
 
-**Important:** Never share or commit your `.env` file to version control!
+Replace the placeholder values with the credentials obtained in Step 1. Ensure there are no spaces around the equals signs and no quotation marks around values.
 
-### Step 3: Install Python Dependencies
+**Important:** Never commit the `.env` file to version control. The `.gitignore` file already excludes it, but verify before pushing to remote repositories.
 
-You have three options to install the required packages:
+### Step 3: Install Dependencies
 
-#### Option A: Using install_requirements.py (Easiest) ⭐
+The application requires several Python packages. You have three installation options:
 
-This project includes a helper script that automatically installs all dependencies:
+#### Option A: Automated Installation (Recommended)
+
+Run the included helper script:
 
 ```bash
 python install_requirements.py
 ```
 
-This script will:
-- Install all required packages automatically
-- Show installation progress
-- Provide next steps after completion
-- Handle errors gracefully
+This script installs all dependencies automatically and provides a summary of successful installations.
 
-#### Option B: Manual Installation
+#### Option B: Virtual Environment (Best Practice)
 
+Using a virtual environment isolates dependencies and prevents conflicts with system packages.
+
+On macOS and Linux:
 ```bash
-pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
-```
-
-#### Option C: Using requirements.txt (if available)
-
-```bash
-pip install -r requirements.txt
-```
-
-> **Note:** The main script (`spotify_to_youtube.py`) also auto-installs missing packages when you run it!
-
-### Step 4: Set Up Virtual Environment (Recommended) 🔧
-
-Using a virtual environment keeps your project dependencies isolated and prevents conflicts.
-
-#### Create and Activate Virtual Environment:
-
-**On macOS/Linux:**
-```bash
-# Create virtual environment
 python3 -m venv .venv
-
-# Activate it
 source .venv/bin/activate
-
-# Install dependencies
 pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
-
-# Or use the helper script
-python install_requirements.py
 ```
 
-**On Windows:**
+On Windows:
 ```bash
-# Create virtual environment
 python -m venv .venv
-
-# Activate it
 .venv\Scripts\activate
-
-# Install dependencies
 pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
 ```
 
-#### Running the Script with Virtual Environment:
+#### Option C: System-Wide Installation
 
-**Method 1: After Activating Virtual Environment**
+Install packages directly to your system Python (not recommended for production use):
+
 ```bash
-# Activate first
-source .venv/bin/activate  # macOS/Linux
+pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
+```
+
+### Step 4: Run the Application
+
+Navigate to the project directory in your terminal and execute the main script.
+
+If using a virtual environment (recommended):
+```bash
+source .venv/bin/activate  # On macOS/Linux
 # or
-.venv\Scripts\activate     # Windows
+.venv\Scripts\activate     # On Windows
 
-# Then run normally
 python spotify_to_youtube.py
-
-# Deactivate when done
-deactivate
 ```
 
-**Method 2: Direct Execution (No Activation Needed)**
+Or run directly without activation:
 ```bash
-# macOS/Linux
-.venv/bin/python spotify_to_youtube.py
-
-# Windows
-.venv\Scripts\python spotify_to_youtube.py
+.venv/bin/python spotify_to_youtube.py  # On macOS/Linux
+# or
+.venv\Scripts\python spotify_to_youtube.py  # On Windows
 ```
-
-### Step 5: Run the Script
-
-1. Open your terminal/command prompt
-2. Navigate to the project folder:
-   ```bash
-   cd path/to/audioDownloader
-   ```
-
-3. Run the script (choose based on your setup):
-   ```bash
-   # If virtual environment is activated
-   python spotify_to_youtube.py
-   
-   # OR directly with virtual environment (macOS/Linux)
-   .venv/bin/python spotify_to_youtube.py
-   
-   # OR directly with virtual environment (Windows)
-   .venv\Scripts\python spotify_to_youtube.py
-   
-   # OR with system Python (not recommended)
-   python3 spotify_to_youtube.py
-   ```
 
 ### Step 5: Provide Input
 
-When the script runs, you'll see:
+The application prompts for a Spotify URL and an optional search keyword:
 
 ```
-============================================================
 Enter your Spotify playlist/album URL and optional search keyword
 Format: {URL} [keyword]
-Examples:
-  https://open.spotify.com/playlist/xxx
-  https://open.spotify.com/album/xxx Visualizer
-  https://open.spotify.com/playlist/xxx Audio
-============================================================
 
 Input:
 ```
 
-**You have two options:**
+#### Basic Usage
 
-#### Option 1: Basic Usage (Default 'lyrics' search)
-Just paste the Spotify URL:
+Paste a Spotify URL without keywords to use the default "lyrics" search:
 ```
 https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I
 ```
-This will search YouTube for each song with "lyrics" appended (e.g., "Song Name Artist lyrics")
 
-#### Option 2: Custom Keyword Search
-Paste the URL followed by a space and your preferred keyword:
+The application searches YouTube for "[Song Name] [Artist] lyrics" for each track.
+
+#### Advanced Usage with Keywords
+
+Add a space and keyword after the URL to customize search terms:
 ```
-https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I Visualizer
+https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I visualizer
 ```
 
-**Supported keywords:**
-- `Visualizer` - For official visualizer videos
-- `Audio` - For official audio tracks
-- `Official` - For official music videos
-- `Live` - For live performances
-- `Acoustic` - For acoustic versions
-- Or any custom keyword you want!
+This searches for "[Song Name] [Artist] visualizer" instead.
 
-### Step 6: Wait for Downloads
+**Useful Keywords:**
+- `official audio` - Studio recordings without video
+- `visualizer` - Animated visual content
+- `lyric video` - Videos with on-screen lyrics
+- `live` - Concert performances
+- `acoustic` - Unplugged versions
+- `instrumental` - Versions without vocals
+- `remix` - Remixed versions
 
-The script will automatically:
-1. ✅ Extract song information from Spotify
-2. ✅ Create a folder with the playlist/album name
-3. ✅ Search YouTube for each song
-4. ✅ Save a CSV file with all song details and YouTube links
-5. ✅ Download all songs as M4A audio files
+### Step 6: Monitor Progress
 
-**Progress indicators will show:**
-- YouTube search progress
-- Download progress for each song
-- Total songs downloaded
+The application provides real-time feedback throughout the process:
 
-### Step 7: Access Your Downloaded Songs
+1. **Spotify Extraction:** Displays album/playlist name and track count
+2. **Folder Creation:** Confirms folder creation with sanitized name
+3. **YouTube Search:** Shows progress bar as each track is matched
+4. **Match Summary:** Displays first five matches with video titles
+5. **Download Progress:** Indicates download status for each file
+6. **Completion Report:** Lists all successfully downloaded files with their locations
 
-After completion, you'll find:
-- **Folder:** Named after your playlist/album
-- **Audio Files:** High-quality M4A files
-- **CSV File:** `spotify_playlist_with_youtube.csv` containing:
-  - Track Name
-  - Artist Name(s)
-  - YouTube Link
-  - YouTube Video Title
+### Step 7: Access Your Music
 
-### Example Run
+After completion, find your downloads in the newly created folder:
 
+```
+Project Directory/
+└── [Album or Playlist Name]/
+    ├── [Track 1 with YouTube Title].m4a
+    ├── [Track 2 with YouTube Title].m4a
+    ├── [Track 3 with YouTube Title].m4a
+    └── spotify_playlist_with_youtube.csv
+```
+
+The CSV file contains four columns:
+- **Track Name:** Original song title from Spotify
+- **Artist Name(s):** Performing artists
+- **YouTube Link:** Direct URL to the downloaded video
+- **YouTube Video Title:** Actual title of the YouTube video
+
+This file serves as a reference for which versions were downloaded and allows you to verify matches.
+
+---
+
+## Troubleshooting
+
+### ModuleNotFoundError: No module named 'spotipy'
+
+**Cause:** Python cannot locate installed packages, typically because you are using system Python instead of your virtual environment.
+
+**Solution:** Run the script using the virtual environment's Python interpreter:
 ```bash
-$ python spotify_to_youtube.py
-
-Spotify Playlist to YouTube Downloader
-==================================================
-Checking and installing required packages...
-All required packages are already installed!
-
-Enter your Spotify playlist/album URL and optional search keyword
-Input: https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I Visualizer
-
-Exporting Spotify playlist...
-Album: The Life of a Showgirl
-Total tracks: 12
-Created folder: The Life of a Showgirl
-Successfully exported 12 tracks!
-
-Using custom YouTube search keyword: 'Visualizer'
-
-Starting YouTube search...
-Searching YouTube: 100%|██████████| 12/12 [00:15<00:00]
-
-Success rate: 100%
-
-Starting download of 12 songs...
-[Download progress for each song...]
-
-Download completed successfully!
-Songs downloaded to: The Life of a Showgirl/
-
-Process completed successfully!
+.venv/bin/python spotify_to_youtube.py  # macOS/Linux
+.venv\Scripts\python spotify_to_youtube.py  # Windows
 ```
 
-### Troubleshooting
+Alternatively, activate the virtual environment before running:
+```bash
+source .venv/bin/activate  # macOS/Linux
+.venv\Scripts\activate  # Windows
+python spotify_to_youtube.py
+```
 
-#### ❌ "No module named 'spotipy'" or "ModuleNotFoundError"
+### API Key Not Found
 
-**Cause:** You're using system Python instead of the virtual environment where packages are installed.
+**Cause:** The application cannot locate your `.env` file or it contains incorrect key names.
 
-**Solutions:**
-1. **Use virtual environment directly:**
-   ```bash
-   # macOS/Linux
-   .venv/bin/python spotify_to_youtube.py
-   
-   # Windows
-   .venv\Scripts\python spotify_to_youtube.py
-   ```
+**Solution:** Verify the following:
+- File is named exactly `.env` (with a leading dot)
+- File exists in the same directory as `spotify_to_youtube.py`
+- Variable names match exactly: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `YOUTUBE_API_KEY`
+- No spaces around equals signs
+- No quotation marks around credential values
 
-2. **Activate virtual environment first:**
-   ```bash
-   # macOS/Linux
-   source .venv/bin/activate
-   
-   # Windows
-   .venv\Scripts\activate
-   
-   # Then run
-   python spotify_to_youtube.py
-   ```
+### YouTube API Quota Exceeded
 
-3. **Install packages in your current Python:**
-   ```bash
-   pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
-   ```
+**Cause:** YouTube imposes daily quotas on API usage (10,000 units per day by default). Large playlists or multiple sessions can exhaust this limit.
 
-4. **Use the helper script:**
-   ```bash
-   python install_requirements.py
-   ```
+**Solution:** 
+- Wait 24 hours for the quota to reset
+- Create a new API key from a different Google Cloud project
+- Use more specific keywords to reduce the number of searches
+- Request a quota increase from Google Cloud Console if you need higher limits regularly
 
-#### ❌ "API key not found"
+### Invalid Playlist URL
 
-**Solution:** Make sure your `.env` file exists and contains valid API keys.
-- Check file name is exactly `.env` (starts with a dot)
-- Verify all three keys are present (SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, YOUTUBE_API_KEY)
-- No quotes needed around the values
+**Cause:** The application cannot parse the provided URL or it does not point to a valid Spotify playlist or album.
 
-#### ❌ "Invalid playlist URL"
+**Solution:** Ensure you are copying the full URL from Spotify:
+- Right-click a playlist or album in Spotify
+- Select "Share" then "Copy link to playlist" or "Copy link to album"
+- Paste the entire URL, including `https://open.spotify.com/`
+- Valid formats: `https://open.spotify.com/playlist/...` or `https://open.spotify.com/album/...`
 
-**Solution:** Make sure you're using a valid Spotify playlist or album URL.
-- Correct format: `https://open.spotify.com/playlist/...` or `https://open.spotify.com/album/...`
-- Copy the URL directly from Spotify
+### Download Failures
 
-#### ❌ "YouTube API quota exceeded"
+**Cause:** Network interruptions, regional restrictions, or YouTube blocking bot-like behavior.
 
-**Solution:** YouTube API has daily limits (10,000 units/day).
-- Wait 24 hours for quota to reset
-- Create a new API key from Google Cloud Console
-- Use keywords to reduce search requests
+**Solution:**
+- Verify internet connectivity is stable
+- Update yt-dlp to the latest version: `pip install --upgrade yt-dlp`
+- Try downloading smaller batches (use shorter playlists)
+- Check if YouTube is accessible from your network (some institutions block it)
+- Consider using a VPN if regional restrictions apply
 
-#### ❌ Downloads fail
+### Permission Errors
 
-**Solutions:**
-- Check your internet connection
-- Update yt-dlp: `pip install --upgrade yt-dlp`
-- Try downloading fewer songs at once
-- Check if YouTube is accessible in your region
+**Cause:** Insufficient file system permissions in the project directory.
 
-#### ❌ Permission denied or file access errors
-
-**Solutions:**
-- Run terminal/command prompt with appropriate permissions
-- Check if antivirus is blocking the script
-- Ensure you have write permissions in the project folder
-
-### Tips for Best Results
-
-1. 🎵 **Use specific keywords** for better YouTube matches
-2. 📁 **Organize by genre** - Download different playlists to different folders
-3. ⚡ **Smaller playlists first** - Test with small playlists before large ones
-4. 🔍 **Check CSV file** - Review YouTube links before downloading
-5. 💾 **Keep CSV files** - They serve as a backup reference
+**Solution:**
+- Ensure you have write permissions for the directory
+- On Unix systems, check with `ls -la` and modify with `chmod` if needed
+- Run terminal as administrator on Windows if necessary
+- Choose a different directory where you have full permissions
 
 ---
 
-## Technologies & Libraries
-
-### Core Python Libraries
-- **`os`** - File and folder operations
-- **`sys`** - System information and Python executable path
-- **`subprocess`** - Run external commands (like pip install)
-- **`importlib`** - Check if packages are installed
-- **`typing`** - Type hints for better code clarity
-
-### Third-Party Libraries
-- **`spotipy`** - Official Spotify API client
-- **`pandas`** - Data manipulation and CSV handling
-- **`googleapiclient`** - YouTube Data API v3 client
-- **`tqdm`** - Progress bars for user feedback
-- **`python-dotenv`** - Load API keys from .env file
-- **`yt-dlp`** - YouTube video downloader
-
-### APIs Used
-- **Spotify Web API** - Access playlist data
-- **YouTube Data API v3** - Search for music videos
-
----
-
-## Code Structure & Functions
-
-### 1. Package Management Functions
-
-```python
-def install_package(package: str) -> bool:
-    """Install a Python package using pip"""
-```
-**Purpose:** Installs missing Python packages automatically
-**How it works:** Runs `pip install [package]` and hides verbose output
-**Returns:** `True` if successful, `False` if failed
-
-```python
-def check_and_install_packages() -> bool:
-    """Check if required packages are installed and install missing ones"""
-```
-**Purpose:** Ensures all required packages are available before running
-**How it works:** 
-- Tries to import each package
-- Lists missing packages
-- Installs them automatically
-- Shows installation summary
-
-```python
-def check_yt_dlp() -> bool:
-    """Check if yt-dlp is installed and install it if missing"""
-```
-**Purpose:** Ensures the YouTube downloader tool is available
-**How it works:** Runs `yt-dlp --version` and installs if missing
-
-### 2. Utility Functions
-
-```python
-def sanitize_filename(filename: str) -> str:
-    """Convert playlist name to a valid folder name"""
-```
-**Purpose:** Makes playlist names safe for folder creation
-**How it works:** Replaces invalid characters (`<>:"/\|?*`) with underscores
-
-```python
-def check_environment() -> bool:
-    """Check if all required environment variables are set"""
-```
-**Purpose:** Verifies API keys are configured
-**How it works:** Checks if `.env` file contains required variables
-
-### 3. Core Functionality Functions
-
-```python
-def export_spotify_playlist(playlist_url: str) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
-    """Export Spotify playlist to DataFrame with Track Name and Artist Name(s)"""
-```
-**Purpose:** Extracts song information from Spotify playlist
-**How it works:**
-- Parses playlist ID from URL
-- Fetches playlist data via Spotify API
-- Handles playlists with >100 songs (pagination)
-- Returns DataFrame with track names and artists
-
-```python
-def get_youtube_link(song_name: str, artist: Optional[str] = None) -> Optional[str]:
-    """Search YouTube for '{song_name} lyrics' and return first result"""
-```
-**Purpose:** Finds YouTube video for each song
-**How it works:**
-- Creates search query: "Song Name lyrics Artist"
-- Uses YouTube Data API to search
-- Returns first video URL found
-- Filters for music category videos
-
-```python
-def create_playlist_folder(playlist_name: str) -> Optional[str]:
-    """Create a folder with the playlist name"""
-```
-**Purpose:** Creates organized folder for downloads
-**How it works:** Sanitizes name and creates folder using `os.makedirs()`
-
-```python
-def download_songs(links: List[str], playlist_folder: str) -> bool:
-    """Execute yt-dlp command to download all songs to the playlist folder"""
-```
-**Purpose:** Downloads all songs using yt-dlp
-**How it works:**
-- Changes to playlist folder
-- Runs yt-dlp command with all URLs
-- Downloads in M4A audio format
-- Lists all downloaded files
-- Returns to original directory
-
-### 4. Main Workflow Functions
-
-```python
-def process_playlist(playlist_url: str) -> bool:
-    """Main function to process a Spotify playlist"""
-```
-**Purpose:** Orchestrates the entire playlist processing workflow
-**How it works:**
-1. Exports playlist from Spotify
-2. Creates organized folder
-3. Searches YouTube for each song
-4. Saves enhanced CSV with YouTube links
-5. Downloads all songs automatically
-
-```python
-def main():
-    """Main application function"""
-```
-**Purpose:** Entry point and setup coordinator
-**How it works:**
-1. Checks and installs packages
-2. Verifies environment variables
-3. Ensures yt-dlp is available
-4. Gets playlist URL from user
-5. Calls `process_playlist()` function
-
----
-
-## Process Flow
+## Project Structure
 
 ```
-1. Script starts
-   ↓
-2. Check/install required packages
-   ↓
-3. Verify API keys in .env file
-   ↓
-4. Ensure yt-dlp is available
-   ↓
-5. Get Spotify playlist URL from user
-   ↓
-6. Export playlist data from Spotify
-   ↓
-7. Create organized folder
-   ↓
-8. Search YouTube for each song
-   ↓
-9. Save enhanced CSV with YouTube links
-   ↓
-10. Download all songs using yt-dlp
-   ↓
-11. Show completion status
+audioDownloader/
+├── spotify_to_youtube.py      # Main application script
+├── install_requirements.py    # Dependency installation helper
+├── env_template.txt           # Template for API credentials
+├── .env                       # Your actual credentials (create this)
+├── .gitignore                 # Files to exclude from version control
+├── README.md                  # This documentation
+└── SETUP.md                   # Additional setup instructions
 ```
 
 ---
 
-## Key Concepts
+## Best Practices
 
-### API Integration
-- **REST APIs** for Spotify and YouTube data
-- **Client credentials** for Spotify authentication
-- **API quotas** and rate limiting handling
+**Start Small:** Test the application with a small playlist (5-10 tracks) before processing larger collections. This helps you verify that credentials are configured correctly and identify any issues early.
 
-### Data Processing
-- **DataFrames** for structured data manipulation
-- **CSV export/import** for data persistence
-- **Data transformation** from API responses
+**Use Specific Keywords:** Experiment with different search keywords to find the versions that best match your preferences. "Official audio" typically provides studio quality, while "visualizer" offers a balance of quality and visual interest.
 
-### System Integration
-- **Automatic package management** via pip
-- **File system operations** for organization
-- **External tool execution** (yt-dlp)
+**Review CSV Files:** Before assuming downloads are correct, open the generated CSV file and spot-check a few YouTube links. This verification step ensures you are getting the intended versions.
 
-### User Experience
-- **Progress tracking** with visual feedback
-- **Error handling** with helpful messages
-- **Fully automated** workflow
+**Respect API Limits:** YouTube and Spotify both impose rate limits. Avoid running multiple instances of the application simultaneously, as this may trigger throttling or temporary bans.
+
+**Keep Credentials Secure:** Never share your `.env` file or commit it to public repositories. Treat API keys like passwords—they provide access to your accounts.
+
+**Update Dependencies Regularly:** Libraries evolve to fix bugs and adapt to API changes. Run `pip install --upgrade [package-name]` periodically to stay current, especially for yt-dlp.
 
 ---
 
-## Why This Architecture?
+## Future Enhancements
 
-1. **Modular Design** - Each function has single responsibility
-2. **Error Handling** - Graceful failure at each step
-3. **User Feedback** - Clear progress and status information
-4. **Security** - API keys stored in environment variables
-5. **Automation** - Minimal user interaction required
-6. **Organization** - Clean folder structure for downloads
-7. **Portability** - Works on any system with Python
+While the current implementation solves the core problem effectively, several enhancements could extend functionality:
 
-This creates a **professional-grade application** that's both powerful and user-friendly, suitable for academic projects and open-source sharing.
+- **Metadata Preservation:** Embed artist, album, and track information directly into M4A files using ID3 tags
+- **Parallel Downloads:** Implement concurrent downloads to reduce total processing time for large playlists
+- **Quality Selection:** Allow users to choose between different audio quality levels (128kbps, 320kbps, lossless)
+- **GUI Interface:** Develop a graphical user interface for users less comfortable with command-line tools
+- **Playlist Synchronization:** Detect changes in Spotify playlists and download only new additions
+- **Format Options:** Support additional output formats beyond M4A (MP3, FLAC, WAV)
+
+---
+
+## Contributing
+
+This project welcomes contributions from developers interested in music automation, API integration, or Python development. Whether you are fixing bugs, improving documentation, or proposing new features, your input is valuable.
+
+---
+
+## License
+
+This project is intended for educational purposes and personal use. Ensure you comply with YouTube's Terms of Service and respect copyright laws when downloading content. The developers of this application are not responsible for misuse or violations of third-party terms.
+
+---
+
+## Acknowledgments
+
+This application builds upon the excellent work of the open-source community, particularly the developers of Spotipy, yt-dlp, and the Google API Python Client. Their robust libraries made this project possible without reinventing complex API interactions.
