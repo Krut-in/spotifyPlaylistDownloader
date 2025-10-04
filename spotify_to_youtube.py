@@ -223,11 +223,27 @@ def export_spotify_playlist(playlist_url: str) -> Tuple[Optional[pd.DataFrame], 
         print("Invalid URL format. Please provide a Spotify playlist or album URL.")
         return None, None
 
-def get_youtube_link(song_name: str, artist: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
-    """Search YouTube for '{song_name} lyrics' and return first result with video title"""
-    query = f"{song_name} lyrics"
+def get_youtube_link(song_name: str, artist: Optional[str] = None, keyword: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+    """Search YouTube for song and return first result with video title
+    
+    Args:
+        song_name: Name of the song to search for
+        artist: Optional artist name
+        keyword: Optional keyword to append to search (e.g., 'Visualizer', 'Lyrics', 'Audio')
+    
+    Returns:
+        Tuple of (YouTube URL, Video Title)
+    """
+    # Build search query
+    query = f"{song_name}"
     if artist:
         query += f" {artist}"
+    
+    # Add keyword if provided, otherwise default to 'lyrics'
+    if keyword:
+        query += f" {keyword}"
+    else:
+        query += " lyrics"
 
     try:
         youtube = build('youtube', 'v3', developerKey=API_KEY)
@@ -316,8 +332,16 @@ def download_songs(links: List[str], playlist_folder: str) -> bool:
         # Return to original directory
         os.chdir(original_dir)
 
-def process_playlist(playlist_url: str) -> bool:
-    """Main function to process a Spotify playlist"""
+def process_playlist(playlist_url: str, search_keyword: Optional[str] = None) -> bool:
+    """Main function to process a Spotify playlist
+    
+    Args:
+        playlist_url: The Spotify playlist or album URL
+        search_keyword: Optional keyword to append to YouTube searches (e.g., 'Visualizer', 'Lyrics')
+    
+    Returns:
+        True if successful, False otherwise
+    """
     print("\nExporting Spotify playlist...")
     df, playlist_name = export_spotify_playlist(playlist_url)
     
@@ -337,6 +361,12 @@ def process_playlist(playlist_url: str) -> bool:
     print("\nFirst few tracks:")
     print(df.head())
     
+    # Display search keyword if provided
+    if search_keyword:
+        print(f"\nUsing custom YouTube search keyword: '{search_keyword}'")
+    else:
+        print("\nUsing default YouTube search keyword: 'lyrics'")
+    
     print("\nStarting YouTube search...")
     
     # Add progress bar for visual feedback
@@ -344,7 +374,7 @@ def process_playlist(playlist_url: str) -> bool:
     
     # Create YouTube links and video titles
     df[['YouTube Link', 'YouTube Video Title']] = df.progress_apply(
-        lambda row: pd.Series(get_youtube_link(row['Track Name'], row['Artist Name(s)'])),
+        lambda row: pd.Series(get_youtube_link(row['Track Name'], row['Artist Name(s)'], search_keyword)),
         axis=1
     )
     
@@ -401,14 +431,35 @@ def main():
         return
     
     # Get playlist URL from user
-    playlist_url = input("Paste your Spotify playlist URL: ").strip()
+    print("\n" + "=" * 60)
+    print("Enter your Spotify playlist/album URL and optional search keyword")
+    print("Format: {URL} [keyword]")
+    print("Examples:")
+    print("  https://open.spotify.com/playlist/xxx")
+    print("  https://open.spotify.com/album/xxx Visualizer")
+    print("  https://open.spotify.com/playlist/xxx Audio")
+    print("=" * 60)
     
-    if not playlist_url:
+    user_input = input("\nInput: ").strip()
+    
+    if not user_input:
         print("No URL provided!")
         return
     
+    # Parse input: split by space, first part is URL, rest is optional keyword
+    parts = user_input.split(None, 1)  # Split into max 2 parts
+    playlist_url = parts[0]
+    search_keyword = parts[1] if len(parts) > 1 else None
+    
+    # Display what was parsed
+    print(f"\nPlaylist URL: {playlist_url}")
+    if search_keyword:
+        print(f"Search keyword: {search_keyword}")
+    else:
+        print("Search keyword: (none - will use default 'lyrics')")
+    
     # Process the playlist
-    success = process_playlist(playlist_url)
+    success = process_playlist(playlist_url, search_keyword)
     
     if success:
         print("\nProcess completed successfully!")
