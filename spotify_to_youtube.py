@@ -157,47 +157,74 @@ def check_environment() -> bool:
 
 # Core functionality functions
 def export_spotify_playlist(playlist_url: str) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
-    """Export Spotify playlist to DataFrame with Track Name and Artist Name(s)"""
+    """Export Spotify playlist or album to DataFrame with Track Name and Artist Name(s)"""
     
-    if 'playlist/' not in playlist_url:
-        print("Invalid playlist URL format")
-        return None, None
-    
-    playlist_id = playlist_url.split('playlist/')[1].split('?')[0]
-    
-    try:
-        playlist = sp.playlist(playlist_id)
-        playlist_name = playlist['name']
-        print(f"Playlist: {playlist_name}")
-        print(f"Total tracks: {playlist['tracks']['total']}")
+    # Check if it's an album or playlist
+    if 'album/' in playlist_url:
+        # It's an album
+        album_id = playlist_url.split('album/')[1].split('?')[0]
         
-        tracks = []
-        results = sp.playlist_tracks(playlist_id)
-        tracks.extend(results['items'])
-        
-        # Handle playlists with more than 100 songs
-        while results['next']:
-            results = sp.next(results)
-            tracks.extend(results['items'])
-        
-        # Extract track information
-        track_data = []
-        for track in tracks:
-            if track['track']:
+        try:
+            album = sp.album(album_id)
+            album_name = album['name']
+            print(f"Album: {album_name}")
+            print(f"Total tracks: {album['total_tracks']}")
+            
+            # Extract track information
+            track_data = []
+            for track in album['tracks']['items']:
                 track_info = {
-                    'Track Name': track['track']['name'],
-                    'Artist Name(s)': ', '.join([artist['name'] for artist in track['track']['artists']])
+                    'Track Name': track['name'],
+                    'Artist Name(s)': ', '.join([artist['name'] for artist in track['artists']])
                 }
                 track_data.append(track_info)
+            
+            return pd.DataFrame(track_data), album_name
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            return None, None
+    
+    elif 'playlist/' in playlist_url:
+        # It's a playlist
+        playlist_id = playlist_url.split('playlist/')[1].split('?')[0]
         
-        return pd.DataFrame(track_data), playlist_name
-        
-    except Exception as e:
-        print(f"Error: {e}")
+        try:
+            playlist = sp.playlist(playlist_id)
+            playlist_name = playlist['name']
+            print(f"Playlist: {playlist_name}")
+            print(f"Total tracks: {playlist['tracks']['total']}")
+            
+            tracks = []
+            results = sp.playlist_tracks(playlist_id)
+            tracks.extend(results['items'])
+            
+            # Handle playlists with more than 100 songs
+            while results['next']:
+                results = sp.next(results)
+                tracks.extend(results['items'])
+            
+            # Extract track information
+            track_data = []
+            for track in tracks:
+                if track['track']:
+                    track_info = {
+                        'Track Name': track['track']['name'],
+                        'Artist Name(s)': ', '.join([artist['name'] for artist in track['track']['artists']])
+                    }
+                    track_data.append(track_info)
+            
+            return pd.DataFrame(track_data), playlist_name
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            return None, None
+    else:
+        print("Invalid URL format. Please provide a Spotify playlist or album URL.")
         return None, None
 
-def get_youtube_link(song_name: str, artist: Optional[str] = None) -> Optional[str]:
-    """Search YouTube for '{song_name} lyrics' and return first result"""
+def get_youtube_link(song_name: str, artist: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+    """Search YouTube for '{song_name} lyrics' and return first result with video title"""
     query = f"{song_name} lyrics"
     if artist:
         query += f" {artist}"
@@ -216,11 +243,13 @@ def get_youtube_link(song_name: str, artist: Optional[str] = None) -> Optional[s
 
         if response['items']:
             video_id = response['items'][0]['id']['videoId']
-            return f"https://www.youtube.com/watch?v={video_id}"
+            video_title = response['items'][0]['snippet']['title']
+            youtube_url = f"https://www.youtube.com/watch?v={video_id}"
+            return youtube_url, video_title
     except Exception as e:
         print(f"Error searching for '{query}': {e}")
 
-    return None
+    return None, None
 
 def create_playlist_folder(playlist_name: str) -> Optional[str]:
     """Create a folder with the playlist name"""
@@ -249,15 +278,16 @@ def download_songs(links: List[str], playlist_folder: str) -> bool:
     os.chdir(playlist_folder)
     
     try:
-        # Create the yt-dlp command
+        # Create the yt-dlp command using Python module
         cmd = [
-            'yt-dlp',
+            sys.executable,
+            '-m', 'yt_dlp',
             '-f', 'bestaudio[ext=m4a]',
             '--output', '%(title)s.%(ext)s'
         ]
         cmd.extend(links)
         
-        print(f"\nExecuting command: {' '.join(cmd[:5])}... [and {len(links)} URLs]")
+        print(f"\nExecuting command: {' '.join(cmd[:7])}... [and {len(links)} URLs]")
         print("=" * 60)
         
         # Execute the download command
@@ -301,35 +331,26 @@ def process_playlist(playlist_url: str) -> bool:
         print("Failed to create playlist folder")
         return False
     
-    # Save basic playlist data
-    output_file = os.path.join(playlist_folder, "csv.csv")
-    df.to_csv(output_file, index=False)
-    
     print(f"Successfully exported {len(df)} tracks!")
-    print(f"File saved as: {output_file}")
     
     # Show first few tracks
     print("\nFirst few tracks:")
     print(df.head())
-    
-    # Show file location
-    file_path = os.path.abspath(output_file)
-    print(f"\nFile location: {file_path}")
     
     print("\nStarting YouTube search...")
     
     # Add progress bar for visual feedback
     tqdm.pandas(desc="Searching YouTube")
     
-    # Create YouTube links
-    df['YouTube Link'] = df.progress_apply(
-        lambda row: get_youtube_link(row['Track Name'], row['Artist Name(s)']),
+    # Create YouTube links and video titles
+    df[['YouTube Link', 'YouTube Video Title']] = df.progress_apply(
+        lambda row: pd.Series(get_youtube_link(row['Track Name'], row['Artist Name(s)'])),
         axis=1
     )
     
     # Check results
     print("\nCompleted searches!")
-    print(df[['Track Name', 'Artist Name(s)', 'YouTube Link']].head())
+    print(df[['Track Name', 'Artist Name(s)', 'YouTube Link', 'YouTube Video Title']].head())
     
     # Save enhanced CSV file
     final_output = os.path.join(playlist_folder, "spotify_playlist_with_youtube.csv")
