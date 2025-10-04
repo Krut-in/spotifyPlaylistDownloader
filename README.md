@@ -18,7 +18,43 @@ Spotify doesn't let you download songs, and manually finding each song on YouTub
 
 ---
 
-## 🚀 Quick Start Guide - Steps to Download Songs
+## � Project Files
+
+### Main Files:
+- **`spotify_to_youtube.py`** - Main script that downloads songs
+- **`install_requirements.py`** - Helper script to install all dependencies automatically
+- **`env_template.txt`** - Template for API keys configuration
+- **`.env`** - Your actual API keys (you create this from the template)
+- **`README.md`** - This documentation file
+- **`SETUP.md`** - Detailed setup instructions
+
+### What is `install_requirements.py`?
+
+This is a convenient helper script that:
+- ✅ Automatically installs all required Python packages
+- ✅ Shows installation progress for each package
+- ✅ Provides a summary of successful/failed installations
+- ✅ Gives you next steps after installation
+- ✅ Handles errors gracefully
+
+**How to use it:**
+```bash
+python install_requirements.py
+```
+
+**What it installs:**
+- spotipy (Spotify API client)
+- pandas (Data manipulation)
+- google-api-python-client (YouTube API client)
+- tqdm (Progress bars)
+- python-dotenv (Environment variables)
+- yt-dlp (YouTube downloader)
+
+> **Tip:** Use this script if you want a quick, automated way to set up all dependencies!
+
+---
+
+## �🚀 Quick Start Guide - Steps to Download Songs
 
 ### Prerequisites
 
@@ -62,13 +98,95 @@ YOUTUBE_API_KEY=your_actual_youtube_api_key_here
 
 ### Step 3: Install Python Dependencies
 
-The script automatically installs required packages, but you can install them manually:
+You have three options to install the required packages:
+
+#### Option A: Using install_requirements.py (Easiest) ⭐
+
+This project includes a helper script that automatically installs all dependencies:
+
+```bash
+python install_requirements.py
+```
+
+This script will:
+- Install all required packages automatically
+- Show installation progress
+- Provide next steps after completion
+- Handle errors gracefully
+
+#### Option B: Manual Installation
 
 ```bash
 pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
 ```
 
-### Step 4: Run the Script
+#### Option C: Using requirements.txt (if available)
+
+```bash
+pip install -r requirements.txt
+```
+
+> **Note:** The main script (`spotify_to_youtube.py`) also auto-installs missing packages when you run it!
+
+### Step 4: Set Up Virtual Environment (Recommended) 🔧
+
+Using a virtual environment keeps your project dependencies isolated and prevents conflicts.
+
+#### Create and Activate Virtual Environment:
+
+**On macOS/Linux:**
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate it
+source .venv/bin/activate
+
+# Install dependencies
+pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
+
+# Or use the helper script
+python install_requirements.py
+```
+
+**On Windows:**
+```bash
+# Create virtual environment
+python -m venv .venv
+
+# Activate it
+.venv\Scripts\activate
+
+# Install dependencies
+pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
+```
+
+#### Running the Script with Virtual Environment:
+
+**Method 1: After Activating Virtual Environment**
+```bash
+# Activate first
+source .venv/bin/activate  # macOS/Linux
+# or
+.venv\Scripts\activate     # Windows
+
+# Then run normally
+python spotify_to_youtube.py
+
+# Deactivate when done
+deactivate
+```
+
+**Method 2: Direct Execution (No Activation Needed)**
+```bash
+# macOS/Linux
+.venv/bin/python spotify_to_youtube.py
+
+# Windows
+.venv\Scripts\python spotify_to_youtube.py
+```
+
+### Step 5: Run the Script
 
 1. Open your terminal/command prompt
 2. Navigate to the project folder:
@@ -76,9 +194,19 @@ pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
    cd path/to/audioDownloader
    ```
 
-3. Run the script:
+3. Run the script (choose based on your setup):
    ```bash
+   # If virtual environment is activated
    python spotify_to_youtube.py
+   
+   # OR directly with virtual environment (macOS/Linux)
+   .venv/bin/python spotify_to_youtube.py
+   
+   # OR directly with virtual environment (Windows)
+   .venv\Scripts\python spotify_to_youtube.py
+   
+   # OR with system Python (not recommended)
+   python3 spotify_to_youtube.py
    ```
 
 ### Step 5: Provide Input
@@ -183,20 +311,76 @@ Process completed successfully!
 
 ### Troubleshooting
 
-**Problem: "No module named 'spotipy'"**
-- Solution: Run `pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp`
+#### ❌ "No module named 'spotipy'" or "ModuleNotFoundError"
 
-**Problem: "API key not found"**
-- Solution: Make sure your `.env` file exists and contains valid API keys
+**Cause:** You're using system Python instead of the virtual environment where packages are installed.
 
-**Problem: "Invalid playlist URL"**
-- Solution: Make sure you're using a valid Spotify playlist or album URL
+**Solutions:**
+1. **Use virtual environment directly:**
+   ```bash
+   # macOS/Linux
+   .venv/bin/python spotify_to_youtube.py
+   
+   # Windows
+   .venv\Scripts\python spotify_to_youtube.py
+   ```
 
-**Problem: "YouTube API quota exceeded"**
-- Solution: YouTube API has daily limits. Wait 24 hours or create a new API key
+2. **Activate virtual environment first:**
+   ```bash
+   # macOS/Linux
+   source .venv/bin/activate
+   
+   # Windows
+   .venv\Scripts\activate
+   
+   # Then run
+   python spotify_to_youtube.py
+   ```
 
-**Problem: Downloads fail**
-- Solution: Check your internet connection and ensure yt-dlp is updated
+3. **Install packages in your current Python:**
+   ```bash
+   pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
+   ```
+
+4. **Use the helper script:**
+   ```bash
+   python install_requirements.py
+   ```
+
+#### ❌ "API key not found"
+
+**Solution:** Make sure your `.env` file exists and contains valid API keys.
+- Check file name is exactly `.env` (starts with a dot)
+- Verify all three keys are present (SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, YOUTUBE_API_KEY)
+- No quotes needed around the values
+
+#### ❌ "Invalid playlist URL"
+
+**Solution:** Make sure you're using a valid Spotify playlist or album URL.
+- Correct format: `https://open.spotify.com/playlist/...` or `https://open.spotify.com/album/...`
+- Copy the URL directly from Spotify
+
+#### ❌ "YouTube API quota exceeded"
+
+**Solution:** YouTube API has daily limits (10,000 units/day).
+- Wait 24 hours for quota to reset
+- Create a new API key from Google Cloud Console
+- Use keywords to reduce search requests
+
+#### ❌ Downloads fail
+
+**Solutions:**
+- Check your internet connection
+- Update yt-dlp: `pip install --upgrade yt-dlp`
+- Try downloading fewer songs at once
+- Check if YouTube is accessible in your region
+
+#### ❌ Permission denied or file access errors
+
+**Solutions:**
+- Run terminal/command prompt with appropriate permissions
+- Check if antivirus is blocking the script
+- Ensure you have write permissions in the project folder
 
 ### Tips for Best Results
 
