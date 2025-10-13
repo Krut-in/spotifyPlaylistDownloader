@@ -1,6 +1,10 @@
-# Spotify Playlist Downloader
+# Spotify/YouTube Playlist Downloader
 
-A fully automated Python application that bridges Spotify and YouTube to download entire music collections with a single command. Simply paste a Spotify playlist or album link, and watch as the application intelligently searches YouTube, matches each track, and downloads high-quality audio files—all organized into neatly structured folders without any manual intervention required.
+A fully automated Python application that downloads entire music collections with a single command. Support for both **Spotify playlists/albums** and **YouTube playlists**:
+- **Spotify**: Paste a playlist or album link, and the app intelligently searches YouTube, matches each track, and downloads high-quality audio files
+- **YouTube**: Paste a YouTube playlist URL, and the app directly downloads all videos as audio files
+
+All downloads are organized into neatly structured folders without any manual intervention required.
 
 ---
 
@@ -22,30 +26,58 @@ These challenges inspired us to build a solution that respects both the convenie
 
 ---
 
-## What Spotify Playlist Downloader Does
+## What This Downloader Does
 
-Our solution emerged from a simple question: what if we could automate the entire workflow while giving users precise control over what they download? We designed this application to act as a bridge between two ecosystems—Spotify's comprehensive metadata and YouTube's vast audio library.
+Our solution emerged from a simple question: what if we could automate the entire workflow while giving users precise control over what they download? We designed this application to support two powerful workflows:
+
+### Spotify Workflow
 
 The journey begins with Spotify's API. When you provide a playlist or album URL, we extract complete track information: song titles, artist names, and album details. This data serves as our blueprint. Next, we leverage YouTube's Data API to intelligently search for each track. Here's where we introduced a key innovation: **customizable search keywords**. Users can specify whether they want "lyrics" videos, "visualizer" versions, "official audio," or any other modifier. This granular control ensures you get exactly the version you desire.
 
 Once matches are identified, our application delegates the download process to yt-dlp, a robust command-line tool that handles YouTube's ever-changing architecture. We extract high-quality M4A audio files while maintaining metadata integrity. Every download is logged in a structured CSV file that maps each track to its corresponding YouTube video, creating a transparent record of your collection.
 
+### YouTube Playlist Workflow (NEW)
+
+When you provide a YouTube playlist URL, the app automatically detects it and switches to direct download mode. It extracts all video URLs from the playlist using yt-dlp's playlist extraction capabilities, then downloads each video as high-quality M4A audio files—completely bypassing the YouTube search step since you're already providing direct links. This is perfect for:
+- Downloading curated YouTube music playlists
+- Archiving YouTube music collections
+- Getting audio from video compilations
+- Any public YouTube playlist with music content
+
 ### Core Features
 
-#### Intelligent Track Matching
+#### Automatic URL Detection
+
+- **Intelligently detects** whether input is a Spotify or YouTube playlist URL
+- Routes to appropriate workflow automatically—no manual selection needed
+- Supports Spotify playlists, Spotify albums, and YouTube playlists
+- Works seamlessly with URL formats including query parameters
+
+#### Intelligent Track Matching (Spotify)
+
 - Automatically extracts song and artist information from Spotify playlists and albums
 - Searches YouTube with **customizable keywords** to find the exact version you want
 - Supports "lyrics," "visualizer," "official audio," "live," "acoustic," and custom search terms
 - Uses YouTube's music category filter to prioritize official content
 - **Handles pagination** for large playlists exceeding 100 tracks seamlessly
 
-#### Dual Platform Support
-- Works with **both Spotify playlists and albums** using the same interface
-- Parses Spotify URLs automatically to determine content type
+#### Direct Playlist Download (YouTube)
+
+- **NEW**: Extracts all videos from YouTube playlist URLs directly
+- No YouTube search needed—downloads from direct video links
+- Supports public YouTube playlists with any number of videos
+- Perfect for music compilations, curated playlists, and audio archives
+
+#### Multi-Platform Support
+
+- Works with **Spotify playlists and albums** using the same interface
+- Works with **YouTube playlists** with automatic detection
+- Parses URLs automatically to determine content type
 - Maintains compatibility with Spotify's authentication flow
 - Extracts complete metadata including track names, artists, and album information
 
 #### Smart Organization System
+
 - Creates dedicated folders named after playlists or albums
 - Sanitizes folder names to ensure file system compatibility
 - Downloads all tracks as high-quality M4A audio files
@@ -53,12 +85,14 @@ Once matches are identified, our application delegates the download process to y
 - Generates a comprehensive CSV file with four columns: Track Name, Artist(s), YouTube Link, and **Video Title**
 
 #### Transparent Tracking
+
 - Records every downloaded track in a structured CSV format
 - Maps each song to its specific YouTube source for future reference
 - Enables users to verify which versions were downloaded
 - Provides a permanent record that survives file reorganization
 
 #### Automated Dependency Management
+
 - Checks for required Python packages and **installs them automatically**
 - Verifies yt-dlp availability and installs if missing
 - Validates API credentials before processing
@@ -174,6 +208,7 @@ This script installs all dependencies automatically and provides a summary of su
 Using a virtual environment isolates dependencies and prevents conflicts with system packages.
 
 On macOS and Linux:
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -181,6 +216,7 @@ pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
 ```
 
 On Windows:
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
@@ -200,6 +236,7 @@ pip install spotipy pandas google-api-python-client tqdm python-dotenv yt-dlp
 Navigate to the project directory in your terminal and execute the main script.
 
 If using a virtual environment (recommended):
+
 ```bash
 source .venv/bin/activate  # On macOS/Linux
 # or
@@ -209,6 +246,7 @@ python spotify_to_youtube.py
 ```
 
 Or run directly without activation:
+
 ```bash
 .venv/bin/python spotify_to_youtube.py  # On macOS/Linux
 # or
@@ -229,6 +267,7 @@ Input:
 #### Basic Usage
 
 Paste a Spotify URL without keywords to use the default "lyrics" search:
+
 ```
 https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I
 ```
@@ -238,6 +277,7 @@ The application searches YouTube for "[Song Name] [Artist] lyrics" for each trac
 #### Advanced Usage with Keywords
 
 Add a space and keyword after the URL to customize search terms:
+
 ```
 https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I visualizer
 ```
@@ -245,6 +285,7 @@ https://open.spotify.com/album/4a6NzYL1YHRUgx9e3YZI6I visualizer
 This searches for "[Song Name] [Artist] visualizer" instead.
 
 **Useful Keywords:**
+
 - `official audio` - Studio recordings without video
 - `visualizer` - Animated visual content
 - `lyric video` - Videos with on-screen lyrics
@@ -278,6 +319,7 @@ Project Directory/
 ```
 
 The CSV file contains four columns:
+
 - **Track Name:** Original song title from Spotify
 - **Artist Name(s):** Performing artists
 - **YouTube Link:** Direct URL to the downloaded video
@@ -294,12 +336,14 @@ This file serves as a reference for which versions were downloaded and allows yo
 **Cause:** Python cannot locate installed packages, typically because you are using system Python instead of your virtual environment.
 
 **Solution:** Run the script using the virtual environment's Python interpreter:
+
 ```bash
 .venv/bin/python spotify_to_youtube.py  # macOS/Linux
 .venv\Scripts\python spotify_to_youtube.py  # Windows
 ```
 
 Alternatively, activate the virtual environment before running:
+
 ```bash
 source .venv/bin/activate  # macOS/Linux
 .venv\Scripts\activate  # Windows
@@ -311,6 +355,7 @@ python spotify_to_youtube.py
 **Cause:** The application cannot locate your `.env` file or it contains incorrect key names.
 
 **Solution:** Verify the following:
+
 - File is named exactly `.env` (with a leading dot)
 - File exists in the same directory as `spotify_to_youtube.py`
 - Variable names match exactly: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `YOUTUBE_API_KEY`
@@ -321,7 +366,8 @@ python spotify_to_youtube.py
 
 **Cause:** YouTube imposes daily quotas on API usage (10,000 units per day by default). Large playlists or multiple sessions can exhaust this limit.
 
-**Solution:** 
+**Solution:**
+
 - Wait 24 hours for the quota to reset
 - Create a new API key from a different Google Cloud project
 - Use more specific keywords to reduce the number of searches
@@ -332,6 +378,7 @@ python spotify_to_youtube.py
 **Cause:** The application cannot parse the provided URL or it does not point to a valid Spotify playlist or album.
 
 **Solution:** Ensure you are copying the full URL from Spotify:
+
 - Right-click a playlist or album in Spotify
 - Select "Share" then "Copy link to playlist" or "Copy link to album"
 - Paste the entire URL, including `https://open.spotify.com/`
@@ -342,6 +389,7 @@ python spotify_to_youtube.py
 **Cause:** Network interruptions, regional restrictions, or YouTube blocking bot-like behavior.
 
 **Solution:**
+
 - Verify internet connectivity is stable
 - Update yt-dlp to the latest version: `pip install --upgrade yt-dlp`
 - Try downloading smaller batches (use shorter playlists)
@@ -353,6 +401,7 @@ python spotify_to_youtube.py
 **Cause:** Insufficient file system permissions in the project directory.
 
 **Solution:**
+
 - Ensure you have write permissions for the directory
 - On Unix systems, check with `ls -la` and modify with `chmod` if needed
 - Run terminal as administrator on Windows if necessary

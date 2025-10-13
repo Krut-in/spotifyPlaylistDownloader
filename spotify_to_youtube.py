@@ -155,6 +155,103 @@ def check_environment() -> bool:
     
     return True
 
+def detect_url_type(url: str) -> str:
+    """Detect whether URL is Spotify or YouTube playlist
+    
+    Args:
+        url: The URL to detect
+    
+    Returns:
+        'spotify' if Spotify playlist/album
+        'youtube' if YouTube playlist
+        'unknown' if neither
+    """
+    url_lower = url.lower()
+    
+    # Check for Spotify URLs
+    if 'spotify.com' in url_lower and ('playlist/' in url_lower or 'album/' in url_lower):
+        return 'spotify'
+    
+    # Check for YouTube playlist URLs
+    if ('youtube.com' in url_lower or 'youtu.be' in url_lower) and 'list=' in url_lower:
+        return 'youtube'
+    
+    return 'unknown'
+
+def extract_youtube_playlist_videos(playlist_url: str) -> Tuple[Optional[List[str]], Optional[str]]:
+    """Extract all video URLs from a YouTube playlist using yt-dlp
+    
+    Args:
+        playlist_url: The YouTube playlist URL
+    
+    Returns:
+        Tuple of (list of video URLs, playlist title) or (None, None) if failed
+    """
+    try:
+        print("Extracting YouTube playlist information...")
+        
+        # Use yt-dlp to extract playlist information without downloading
+        cmd = [
+            sys.executable,
+            '-m', 'yt_dlp',
+            '--flat-playlist',
+            '--print', 'url',
+            '--print', 'title',
+            '--no-warnings',
+            playlist_url
+        ]
+        
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        output_lines = result.stdout.strip().split('\n')
+        
+        if not output_lines:
+            print("No videos found in playlist")
+            return None, None
+        
+        # Extract video URLs (every odd line) and titles (every even line)
+        video_urls = []
+        for i in range(0, len(output_lines), 2):
+            if i < len(output_lines):
+                video_urls.append(output_lines[i])
+        
+        # Get playlist title using a separate command
+        title_cmd = [
+            sys.executable,
+            '-m', 'yt_dlp',
+            '--flat-playlist',
+            '--print', 'playlist_title',
+            '--no-warnings',
+            playlist_url
+        ]
+        
+        title_result = subprocess.run(
+            title_cmd,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        playlist_title = title_result.stdout.strip().split('\n')[0] if title_result.stdout.strip() else "YouTube_Playlist"
+        
+        print(f"Playlist: {playlist_title}")
+        print(f"Total videos: {len(video_urls)}")
+        
+        return video_urls, playlist_title
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error extracting playlist: {e}")
+        print(f"Error output: {e.stderr}")
+        return None, None
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None, None
+
 # Core functionality functions
 def export_spotify_playlist(playlist_url: str) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
     """Export Spotify playlist or album to DataFrame with Track Name and Artist Name(s)"""
@@ -332,6 +429,46 @@ def download_songs(links: List[str], playlist_folder: str) -> bool:
         # Return to original directory
         os.chdir(original_dir)
 
+def process_youtube_playlist(playlist_url: str) -> bool:
+    """Process a YouTube playlist directly without YouTube search
+    
+    Args:
+        playlist_url: The YouTube playlist URL
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    print("\nProcessing YouTube playlist...")
+    
+    # Extract video URLs from the YouTube playlist
+    video_urls, playlist_name = extract_youtube_playlist_videos(playlist_url)
+    
+    if not video_urls or not playlist_name:
+        print("Failed to extract videos from YouTube playlist.")
+        return False
+    
+    # Create folder for the playlist
+    playlist_folder = create_playlist_folder(playlist_name)
+    if not playlist_folder:
+        print("Failed to create playlist folder")
+        return False
+    
+    print(f"Successfully extracted {len(video_urls)} videos!")
+    print(f"\nFirst few videos:")
+    for i, url in enumerate(video_urls[:5], 1):
+        print(f"  {i}. {url}")
+    
+    if len(video_urls) > 5:
+        print(f"  ... and {len(video_urls) - 5} more")
+    
+    # Download all videos using the existing download function
+    print(f"\nTotal videos to download: {len(video_urls)}")
+    print(f"Videos will be downloaded to: {playlist_folder}/")
+    
+    # Execute the download
+    print("\nStarting automatic download...")
+    return download_songs(video_urls, playlist_folder)
+
 def process_playlist(playlist_url: str, search_keyword: Optional[str] = None) -> bool:
     """Main function to process a Spotify playlist
     
@@ -414,7 +551,7 @@ def process_playlist(playlist_url: str, search_keyword: Optional[str] = None) ->
 
 def main():
     """Main application function"""
-    print("Spotify Playlist to YouTube Downloader")
+    print("Spotify/YouTube Playlist Downloader")
     print("=" * 50)
     
     # Check and install required packages
@@ -431,14 +568,17 @@ def main():
         return
     
     # Get playlist URL from user
-    print("\n" + "=" * 60)
-    print("Enter your Spotify playlist/album URL and optional search keyword")
+    print("\n" + "=" * 70)
+    print("Enter your Spotify or YouTube playlist URL")
     print("Format: {URL} [keyword]")
-    print("Examples:")
-    print("  https://open.spotify.com/playlist/xxx")
-    print("  https://open.spotify.com/album/xxx Visualizer")
-    print("  https://open.spotify.com/playlist/xxx Audio")
-    print("=" * 60)
+    print("\nSupported URLs:")
+    print("  • Spotify Playlist: https://open.spotify.com/playlist/xxx")
+    print("  • Spotify Album: https://open.spotify.com/album/xxx")
+    print("  • YouTube Playlist: https://youtube.com/playlist?list=xxx")
+    print("\nOptional keyword (for Spotify only):")
+    print("  • Add 'Visualizer', 'Audio', 'Lyrics', etc. after Spotify URL")
+    print("  • Example: https://open.spotify.com/playlist/xxx Visualizer")
+    print("=" * 70)
     
     user_input = input("\nInput: ").strip()
     
@@ -451,15 +591,36 @@ def main():
     playlist_url = parts[0]
     search_keyword = parts[1] if len(parts) > 1 else None
     
-    # Display what was parsed
-    print(f"\nPlaylist URL: {playlist_url}")
-    if search_keyword:
-        print(f"Search keyword: {search_keyword}")
-    else:
-        print("Search keyword: (none - will use default 'lyrics')")
+    # Detect URL type
+    url_type = detect_url_type(playlist_url)
     
-    # Process the playlist
-    success = process_playlist(playlist_url, search_keyword)
+    print(f"\nDetected URL type: {url_type.upper()}")
+    print(f"Playlist URL: {playlist_url}")
+    
+    success = False
+    
+    if url_type == 'spotify':
+        # Spotify workflow: Extract songs -> Search YouTube -> Download
+        if search_keyword:
+            print(f"Search keyword: {search_keyword}")
+        else:
+            print("Search keyword: (none - will use default 'lyrics')")
+        
+        success = process_playlist(playlist_url, search_keyword)
+        
+    elif url_type == 'youtube':
+        # YouTube workflow: Extract videos -> Download directly
+        if search_keyword:
+            print(f"Note: Search keyword '{search_keyword}' is ignored for YouTube playlists")
+        
+        success = process_youtube_playlist(playlist_url)
+        
+    else:
+        print("\nError: Invalid URL format!")
+        print("Please provide either:")
+        print("  • A Spotify playlist/album URL")
+        print("  • A YouTube playlist URL")
+        return
     
     if success:
         print("\nProcess completed successfully!")
